@@ -34,18 +34,43 @@ func NewTypeBox(store map[string]interface{}) *TypeBox {
 	}
 }
 
-func NewObjectValue(objectStore map[string]interface{}) *ObjectValue {
+func NewObjectValue() *ObjectValue {
 	return &ObjectValue{
-		Data: objectStore,
+		Data: make(map[string]interface{}),
 	}
 }
 
 func (tb *TypeBox) SetScalar(key, typ, raw string) {
-	tb.store[key] = raw
+	switch typ {
+	case "INT":
+		v, err := strconv.Atoi(raw)
+		if err == nil {
+			tb.store[key] = v
+		}
+	case "STRING":
+		tb.store[key] = raw
+	case "FLOAT":
+		v, err := strconv.ParseFloat(raw, 64)
+		if err == nil {
+			tb.store[key] = v
+		}
+	default:
+		fmt.Println("Unknown type:", typ)
+	}
 }
 
-func (tb *TypeBox) SetObject(key string, fields ObjectValue) {
-	tb.store[key] = fields
+func (ov *ObjectValue) SetField(key, typ, raw string) {
+	ov.Data[key] = parseValue(typ, raw)
+}
+
+func (tb *TypeBox) SetObject(key string, fields [][3]string) {
+	obj := NewObjectValue()
+
+	for _, field := range fields {
+		obj.SetField(field[0], field[1], field[2])
+	}
+
+	tb.store[key] = obj
 }
 
 func (tb *TypeBox) PrintKey(key string) string {
@@ -57,45 +82,87 @@ func (tb *TypeBox) PrintKey(key string) string {
 	return "Error from Print key"
 }
 
+func (tb *TypeBox) MergeObjects(target, source string) {
+
+}
+
+func (lv ListValue) ToString() string {
+	return "aba"
+}
+
+func (ov ObjectValue) ToString() string {
+	
+}
+
+func parseValue(typ, val string) interface{} {
+	switch typ {
+	case "INT":
+		v, _ := strconv.Atoi(val)
+		return v
+	case "STRING":
+		return val
+	case "FLOAT":
+		v, _ := strconv.ParseFloat(val, 64)
+		return v
+	default:
+		return nil
+	}
+}
+
 func main() {
-	var k int
-	fmt.Println("Введите кол-во команд: ")
-	fmt.Scan(&k)
 
 	store := make(map[string]interface{})
-	objectStore := make(map[string]interface{})
 
 	tb := NewTypeBox(store)
-	ov := NewObjectValue(objectStore)
+
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	k, _ := strconv.Atoi(scanner.Text())
 
 	var resultPrint []interface{}
-
 	var printFlag bool
-	in := bufio.NewScanner(os.Stdin)
 
-	for i := 0; i <= k && in.Scan(); i++ {
-		data := in.Text()
-		arrData := strings.Split(data, " ")
-		switch arrData[0] {
+	
+	for range k {
+		scanner.Scan()
+		line := scanner.Text()
+		parts := strings.Split(line, " ")
+
+		switch parts[0] {
+
 		case "SET":
-			tb.SetScalar(arrData[1], arrData[2], arrData[3])
-		case "PRINT":
-			resultPrint = append(resultPrint, arrData[1])
-			printFlag = true
+			tb.SetScalar(parts[1], parts[2], parts[3])
+
 		case "OBJECT":
-			num, err := strconv.Atoi(arrData[2])
-			if err != nil {
-				fmt.Println("Ошибка:", err)
-			} else {
-				k += num
-				ov.Data[arrData[0]] = arrData[2]
-				
+			objName := parts[1]
+			count, _ := strconv.Atoi(parts[2])
+			if count > 20 {
+				fmt.Println("Команд очень много!")
+				os.Exit(1)
 			}
 
-		}
+			var fields [][3]string
 
+			for range count {
+				scanner.Scan()
+				objLine := scanner.Text()
+				objParts := strings.Split(objLine, " ")
+
+				fields = append(fields, [3]string{
+					objParts[0],
+					objParts[1],
+					objParts[2],
+				})
+			}
+
+			tb.SetObject(objName, fields)
+
+		case "PRINT":
+			resultPrint = append(resultPrint, parts[1])
+			printFlag = true
+		}
 	}
-// Доработать логику с OBJECT, добавить PUSH (list), подкрутить interface{}
+
 	if printFlag {
 		for _, v := range resultPrint {
 			switch n := v.(type) {
@@ -106,5 +173,4 @@ func main() {
 			}
 		}
 	}
-	fmt.Println(ov.Data)
 }
