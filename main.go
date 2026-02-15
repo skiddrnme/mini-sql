@@ -4,43 +4,65 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+
+	// "sort"
 	"strconv"
 	"strings"
 )
-
+// Интерфейс для вывода данных определенных типов
 type Printable interface {
 	ToString() string
 }
 
+// Значения (модель данных)
 type ObjectValue struct {
 	Data map[string]interface{}
 }
-
-// func (ov ObjectValue) ToString() string{
-
-// }
-
-type TypeBox struct {
-	store map[string]interface{}
+func (ov ObjectValue) ToString() string {
+	// сортировка ключей
+	// формат {key:value,key2:value2}
+	// использовать formatValue
+	return "aba"
 }
-
-type ListValue struct {
-	Data []interface{}
-}
-
-func NewTypeBox(store map[string]interface{}) *TypeBox {
-	return &TypeBox{
-		store: store,
-	}
-}
-
 func NewObjectValue() *ObjectValue {
 	return &ObjectValue{
 		Data: make(map[string]interface{}),
 	}
 }
+func (ov *ObjectValue) SetField(key, typ, raw string) {
+	ov.Data[key] = parseValue(typ, raw)
+}
 
-func (tb *TypeBox) SetScalar(key, typ, raw string) {
+type ListValue struct {
+	Data []interface{}
+}
+func (lv ListValue) ToString() string {
+	return "aba"
+}
+
+
+// Общий форматировщик
+func formatValue(v interface{}) string {
+	// 1. Проверка на Printable
+	// 2. int
+	// 3. float64
+	// 4. string
+	// 5. nil → "null"
+	return "aba"
+}
+
+// TypeBox (ядро системы)
+type TypeBox struct {
+	store map[string]interface{}
+}
+func NewTypeBox() *TypeBox {
+	return &TypeBox{
+		store: make(map[string]interface{}),
+	}
+}
+
+// Команды
+func (tb *TypeBox) SetScalar(key, typ, raw string) string{
 	switch typ {
 	case "INT":
 		v, err := strconv.Atoi(raw)
@@ -55,12 +77,9 @@ func (tb *TypeBox) SetScalar(key, typ, raw string) {
 			tb.store[key] = v
 		}
 	default:
-		fmt.Println("Unknown type:", typ)
+		return "Unknown type"
 	}
-}
-
-func (ov *ObjectValue) SetField(key, typ, raw string) {
-	ov.Data[key] = parseValue(typ, raw)
+	return ""
 }
 
 func (tb *TypeBox) SetObject(key string, fields [][3]string) {
@@ -73,27 +92,33 @@ func (tb *TypeBox) SetObject(key string, fields [][3]string) {
 	tb.store[key] = obj
 }
 
-func (tb *TypeBox) PrintKey(key string) string {
-	if value, ok := tb.store[key].(string); ok {
-		fmt.Println(value)
-	} else {
-		fmt.Println("null")
-	}
-	return "Error from Print key"
+func (tb *TypeBox) PushValue(key, typ, raw string) {
+	// работать с ListValue
 }
 
+// Исправить вот это, чтоб вывод был корректным и не было конфликтов с типами
+func (tb *TypeBox) PrintKey(key string) string {
+	if value, ok := tb.store[key].(string); ok {
+		return value
+	} else {
+		return "null"
+	}
+}
+
+// Слияние двух объектов
 func (tb *TypeBox) MergeObjects(target, source string) {
 
 }
 
-func (lv ListValue) ToString() string {
-	return "aba"
-}
 
-func (ov ObjectValue) ToString() string {
-	
-}
 
+
+
+
+
+
+
+// Вспомогательная функция (Преобразование типов)
 func parseValue(typ, val string) interface{} {
 	switch typ {
 	case "INT":
@@ -110,10 +135,7 @@ func parseValue(typ, val string) interface{} {
 }
 
 func main() {
-
-	store := make(map[string]interface{})
-
-	tb := NewTypeBox(store)
+	tb := NewTypeBox()
 
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Scan()
@@ -122,8 +144,7 @@ func main() {
 	var resultPrint []interface{}
 	var printFlag bool
 
-	
-	for range k {
+	for i := 0; i < k; i++ {
 		scanner.Scan()
 		line := scanner.Text()
 		parts := strings.Split(line, " ")
@@ -143,7 +164,7 @@ func main() {
 
 			var fields [][3]string
 
-			for range count {
+			for j := 0; j < count; j++ {
 				scanner.Scan()
 				objLine := scanner.Text()
 				objParts := strings.Split(objLine, " ")
@@ -173,4 +194,5 @@ func main() {
 			}
 		}
 	}
+
 }
