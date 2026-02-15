@@ -43,12 +43,19 @@ func (lv ListValue) ToString() string {
 
 // Общий форматировщик
 func formatValue(v interface{}) string {
-	// 1. Проверка на Printable
-	// 2. int
-	// 3. float64
-	// 4. string
-	// 5. nil → "null"
-	return "aba"
+	if val, ok := v.(Printable); ok {
+		return val.ToString()
+	}
+	switch value := v.(type){
+		case int:
+			return strconv.Itoa(value)
+		case float64:
+			return strconv.FormatFloat(value, 'f', 2, 64)
+		case string:
+			return value
+		default: 
+			return "null"
+	}
 }
 
 // TypeBox (ядро системы)
@@ -96,13 +103,12 @@ func (tb *TypeBox) PushValue(key, typ, raw string) {
 	// работать с ListValue
 }
 
-// Исправить вот это, чтоб вывод был корректным и не было конфликтов с типами
+// Вывод 
 func (tb *TypeBox) PrintKey(key string) string {
-	if value, ok := tb.store[key].(string); ok {
-		return value
-	} else {
-		return "null"
+	if value, ok := tb.store[key]; ok {
+		return formatValue(value)
 	}
+	return "null"
 }
 
 // Слияние двух объектов
@@ -110,15 +116,7 @@ func (tb *TypeBox) MergeObjects(target, source string) {
 
 }
 
-
-
-
-
-
-
-
-
-// Вспомогательная функция (Преобразование типов)
+// Вспомогательная функция (Преобразование типов из stdin)
 func parseValue(typ, val string) interface{} {
 	switch typ {
 	case "INT":
