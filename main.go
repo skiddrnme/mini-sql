@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
 
 	// "sort"
 	"strconv"
 	"strings"
 )
-// Интерфейс для вывода данных определенных типов
+
+// Интерфейс для вывода данных составных типов
 type Printable interface {
 	ToString() string
 }
@@ -19,10 +21,22 @@ type ObjectValue struct {
 	Data map[string]interface{}
 }
 func (ov ObjectValue) ToString() string {
-	// сортировка ключей
-	// формат {key:value,key2:value2}
-	// использовать formatValue
-	return "aba"
+	// сортировка
+	keys := make([]string, 0, len(ov.Data))
+
+	for k := range ov.Data{
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	// фигурные скобки 
+	var result []string
+	for _, k := range keys{
+		result = append(result, fmt.Sprintf("%s:%d", k, formatValue(ov.Data[k])))
+	}
+	
+	resultStr := strings.Join(result, "")
+	return resultStr
 }
 func NewObjectValue() *ObjectValue {
 	return &ObjectValue{
@@ -34,7 +48,7 @@ func (ov *ObjectValue) SetField(key, typ, raw string) {
 }
 
 type ListValue struct {
-	Data []interface{}
+	data []interface{}
 }
 func (lv ListValue) ToString() string {
 	return "aba"
@@ -43,6 +57,9 @@ func (lv ListValue) ToString() string {
 
 // Общий форматировщик
 func formatValue(v interface{}) string {
+	if v == nil{
+		return "null"
+	}
 	if val, ok := v.(Printable); ok {
 		return val.ToString()
 	}
@@ -131,6 +148,9 @@ func parseValue(typ, val string) interface{} {
 		return nil
 	}
 }
+
+
+
 
 func main() {
 	tb := NewTypeBox()
