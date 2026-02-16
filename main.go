@@ -32,11 +32,11 @@ func (ov ObjectValue) ToString() string {
 	// фигурные скобки 
 	var result []string
 	for _, k := range keys{
-		result = append(result, fmt.Sprintf("%s:%d", k, formatValue(ov.Data[k])))
+		result = append(result, fmt.Sprintf("%s:%s", k, formatValue(ov.Data[k])))
 	}
 	
-	resultStr := strings.Join(result, "")
-	return resultStr
+	resultStr := strings.Join(result, ",")
+	return "{" + resultStr + "}"
 }
 func NewObjectValue() *ObjectValue {
 	return &ObjectValue{
