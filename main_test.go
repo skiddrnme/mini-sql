@@ -17,3 +17,17 @@ func TestObjectValueToString_Simple(t *testing.T) {
 		t.Errorf("expected %s, got %s", expected, result)
 	}
 }
+
+func TestListValueToString_Simple(t *testing.T){
+	list := ListValue{
+		Data: []interface{}{"hello", 4, 3.5},
+	}
+
+	result := list.ToString()
+	expected := "[hello,4,3.5]"
+
+	if result != expected{
+		t.Errorf("expected %s, got %s", expected, result)
+	}
+
+}
