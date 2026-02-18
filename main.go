@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"os"
 	"sort"
-
-	// "sort"
 	"strconv"
 	"strings"
 )
@@ -102,24 +100,8 @@ func NewTypeBox() *TypeBox {
 }
 
 // Команды
-func (tb *TypeBox) SetScalar(key, typ, raw string) string {
-	switch typ {
-	case "INT":
-		v, err := strconv.Atoi(raw)
-		if err == nil {
-			tb.store[key] = v
-		}
-	case "STRING":
-		tb.store[key] = raw
-	case "FLOAT":
-		v, err := strconv.ParseFloat(raw, 64)
-		if err == nil {
-			tb.store[key] = v
-		}
-	default:
-		return "Unknown type"
-	}
-	return ""
+func (tb *TypeBox) SetScalar(key, typ, raw string) {
+	tb.store[key] = parseValue(typ, raw)
 }
 
 func (tb *TypeBox) SetObject(key string, fields [][3]string) {
@@ -138,22 +120,49 @@ Cоздать лист (key),
 обработать три ситуации с ключом
 */
 func (tb *TypeBox) PushValue(key, typ, raw string) {
-	lv := NewListValue()
-	list := make([]interface{}, 0, len(lv.Data))
-
-	list = append(list, parseValue(typ, raw))
-}
-
-// Вывод
-func (tb *TypeBox) PrintKey(key string) string {
-	if value, ok := tb.store[key]; ok {
-		tb.results = append(tb.results, formatValue(value))
+	val, ok := tb.store[key]
+	if ok {
+		switch v := val.(type) {
+		case *ListValue:
+			v.Data = append(v.Data, parseValue(typ, raw))
+		default:
+			lv := NewListValue()
+			lv.Data = append(lv.Data, v)
+			lv.Data = append(lv.Data, parseValue(typ, raw))
+			tb.store[key] = lv
+		}
+	} else {
+		lv := NewListValue()
+		lv.Data = append(lv.Data, parseValue(typ, raw))
+		tb.store[key] = lv
 	}
-	return "null"
 }
 
 // Слияние двух объектов
 func (tb *TypeBox) MergeObjects(target, source string) {
+	val, ok := tb.store[target]
+	if ok {
+		val1, ok := tb.store[source]
+		if ok {
+			if v, ok := val.(*ObjectValue); ok {
+				if v1, ok := val1.(*ObjectValue); ok {
+					for k, value := range v1.Data {
+						v.Data[k] = value
+					}
+				}
+			}
+		}
+	}
+}
+
+// Вывод
+func (tb *TypeBox) PrintKey(key string) {
+	value, ok := tb.store[key]
+	if ok {
+		tb.results = append(tb.results, formatValue(value))
+	} else {
+		tb.results = append(tb.results, "null")
+	}
 
 }
 
@@ -216,6 +225,8 @@ func main() {
 			tb.SetObject(objName, fields)
 		case "PUSH":
 			tb.PushValue(parts[1], parts[2], parts[3])
+		case "MERGE":
+			tb.MergeObjects(parts[1], parts[2])
 		case "PRINT":
 			tb.PrintKey(parts[1])
 		}

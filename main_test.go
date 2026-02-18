@@ -31,3 +31,8 @@ func TestListValueToString_Simple(t *testing.T){
 	}
 
 }
+
+
+func TestListValuePushValue_Simple(t *testing.T){
+	
+}
